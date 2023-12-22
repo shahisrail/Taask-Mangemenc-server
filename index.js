@@ -11,8 +11,8 @@ app.use(express.json());
 // middale ware
 app.use(cors());
 app.use(express.json());
-    const uri =
-    "mongodb+srv://Task-mangement:8cn2mJaMJCBh62YB@cluster0.bkdyuro.mongodb.net/?retryWrites=true&w=majority";
+const uri =
+  "mongodb+srv://Task-mangement:8cn2mJaMJCBh62YB@cluster0.bkdyuro.mongodb.net/?retryWrites=true&w=majority";
 // const uri =
 //   "mongodb+srv://<username>:<password>@cluster0.bkdyuro.mongodb.net/?retryWrites=true&w=majority";
 
@@ -32,27 +32,81 @@ async function run() {
     const Taskcollectoin = client.db("Task").collection("Addtasks");
 
     //  post task in database
-    app.post("/tasks", async (request, response) => {
-        const task = request.body;
-        const result = await Taskcollectoin.insertOne(task);
-        response.status(200).send(result);
-      })
-    
-    app.get("/tasks/:email", async (request, response) => {
-        const email = request.params.email;
-        const query = { loggedInUserEmail: email };
-        const result = await Taskcollectoin.find(query).toArray();
-        response.status(200).send(result);
-      });
-  
-      app.get("/tasks/item/:id", async (request, response) => {
-        const id = request.params.id;
-        const query = { _id: new ObjectId(id) };
-        const result = await Taskcollectoin.findOne(query);
-        response.status(200).send(result);
-      });
 
+    app.post("/task", async (req, res) => {
+      const task = req.body;
+      const result = await Taskcollectoin.insertOne(task);
+      res.send(result);
+    });
 
+    app.get("/task/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await Taskcollectoin.find(query).toArray();
+      res.send(result);
+    });
+
+    app.get("/tasks/item/:id", async (request, response) => {
+      const id = request.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await Taskcollectoin.findOne(query);
+      response.status(200).send(result);
+    });
+    app.patch("/task", async (req, res) => {
+      const id = req.query.id;
+      const data = req.body;
+      const query = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          status: data.status,
+        },
+      };
+      const result = await Taskcollectoin.updateOne(query, updatedDoc);
+      res.send(result);
+    });
+
+    //   delete
+    app.delete("/task/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+
+      try {
+        const result = await Taskcollectoin.deleteOne(query);
+        if (result.deletedCount === 1) {
+          res.status(200).json({ message: "Task deleted successfully" });
+        } else {
+          res.status(404).json({ message: "Task not found" });
+        }
+      } catch (error) {
+        res.status(500).json({ message: "Internal server error" });
+      }
+    });
+
+    // Update
+    app.get("/updatetask/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await Taskcollectoin.findOne(query);
+      res.send(result);
+    });
+
+    // update
+    app.patch("/updatetask/:id", async (req, res) => {
+      const id = req.params.id;
+      const item = req.body;
+      const filter = { _id: new ObjectId(id) };
+
+      const updatedDoc = {
+        $set: {
+          titale: item.titale,
+          Dedline: item.Dedline,
+          Descriptoin: item.Descriptoin,
+          priority: item.priority,
+        },
+      };
+      const result = await Taskcollectoin.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
 
     await client.db("admin").command({ ping: 1 });
     console.log(
